@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: subjects
+    // Fields: id, title, slug, description, thumbnailUrl, isPublished, createdAt
+    //
+    // Collection: sections
+    // Fields: id, subjectId, title, orderIndex
+    //
+    // Collection: videos
+    // Fields: id, sectionId, subjectId, title, description, youtubeId, orderIndex, durationSeconds
+    //
+    // Collection: video_progress
+    // Document ID: {userId}_{videoId}
+    // Fields: userId, videoId, subjectId, lastPositionSeconds, isCompleted, updatedAt
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "hkshivu02@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    // Validation Helpers
+    function isValidSubject(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.slug is string && data.slug.size() > 0 &&
+             data.description is string && data.description.size() < 2000;
+    }
+
+    function isValidProgress(data) {
+      return data.userId == request.auth.uid &&
+             data.videoId is string &&
+             data.subjectId is string &&
+             data.lastPositionSeconds is number &&
+             data.isCompleted is bool;
+    }
+
+    function isValidSearchHistory(data) {
+      return data.userId == request.auth.uid &&
+             data.queries is list &&
+             data.queries.size() <= 10 &&
+             data.updatedAt is number;
+    }
+
+    function isValidEnrollment(data) {
+      return data.userId == request.auth.uid &&
+             data.subjectId is string &&
+             data.enrolledAt is number &&
+             data.status in ['active', 'completed'];
+    }
+
+    // Rules
+    match /subjects/{subjectId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /sections/{sectionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /videos/{videoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /video_progress/{progressId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
+      allow write: if isAuthenticated() && isValidProgress(request.resource.data);
+    }
+
+    match /search_history/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidSearchHistory(request.resource.data);
+    }
+
+    match /enrollments/{enrollmentId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
+      allow write: if isAuthenticated() && isValidEnrollment(request.resource.data);
+    }
+  }
+}

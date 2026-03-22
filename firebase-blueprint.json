@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "Subject": {
+      "title": "Course Subject",
+      "description": "A top-level course containing sections and videos.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "thumbnailUrl": { "type": "string", "format": "url" },
+        "isPublished": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "title", "slug", "description", "isPublished", "createdAt"]
+    },
+    "Section": {
+      "title": "Course Section",
+      "description": "A grouping of videos within a subject.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "title": { "type": "string" },
+        "orderIndex": { "type": "integer" }
+      },
+      "required": ["id", "subjectId", "title", "orderIndex"]
+    },
+    "Video": {
+      "title": "Course Video",
+      "description": "A single lesson video.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sectionId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "youtubeId": { "type": "string" },
+        "orderIndex": { "type": "integer" },
+        "durationSeconds": { "type": "number" }
+      },
+      "required": ["id", "sectionId", "subjectId", "title", "description", "youtubeId", "orderIndex"]
+    },
+    "VideoProgress": {
+      "title": "User Video Progress",
+      "description": "Tracks a user's progress through a specific video.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "videoId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "lastPositionSeconds": { "type": "number" },
+        "isCompleted": { "type": "boolean" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "videoId", "subjectId", "lastPositionSeconds", "isCompleted", "updatedAt"]
+    },
+    "SearchHistory": {
+      "title": "User Search History",
+      "description": "Stores a user's recent search queries.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "queries": { "type": "array", "items": { "type": "string" } },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["userId", "queries", "updatedAt"]
+    },
+    "Enrollment": {
+      "title": "Course Enrollment",
+      "description": "Tracks a user's enrollment in a course.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "enrolledAt": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "completed"] }
+      },
+      "required": ["userId", "subjectId", "enrolledAt", "status"]
+    }
+  },
+  "firestore": {
+    "/subjects/{subjectId}": { "schema": "Subject", "description": "Course subjects" },
+    "/sections/{sectionId}": { "schema": "Section", "description": "Course sections" },
+    "/videos/{videoId}": { "schema": "Video", "description": "Course videos" },
+    "/video_progress/{progressId}": { "schema": "VideoProgress", "description": "User video progress" },
+    "/search_history/{userId}": { "schema": "SearchHistory", "description": "User search history" },
+    "/enrollments/{enrollmentId}": { "schema": "Enrollment", "description": "User course enrollments" }
+  }
+}
